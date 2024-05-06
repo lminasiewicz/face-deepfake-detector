@@ -1,0 +1,95 @@
+body {
+  background: linear-gradient(#cecece, #cccccc, #cccccc, #cacaca, #c8c8c8, #c2c2c2, #bebebe, #bbbbbb);
+  color: #000000;
+  font-family:Arial, Helvetica, sans-serif;
+  font-size: 20px;
+  margin: 0;
+  height: 100vh;
+}
+
+.App {
+  display: flex;
+  justify-content: center;
+}
+
+button {
+  padding: 0.7em;
+  border-radius: 0.7em;
+  border: none;
+  color: white;
+  background: linear-gradient(#c00000, #a00000);
+  &:hover {
+    background: linear-gradient(#e00000, #c00000);
+  }
+}
+
+.main {
+  box-shadow: 2px 2px 8px #909090;
+  margin-top: 6em;
+  height: 30em;
+  width: 85vw;
+  background-color: #dedede;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .util-element {
+    margin: 1em;
+
+    &.util-header {
+      font-weight: bold;
+      font-size: 2em;
+      text-shadow: 1px 1px 3px gray;
+    }
+
+    &.util-body {
+      padding: 2em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+
+      .util-form {
+        padding: 1em;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        input {
+          display: flex;
+          justify-content: space-between;
+          font-size: 1em;
+        }
+
+        button {
+          font-size: 1em;
+        }
+      }
+
+      .util-reports {
+        p {
+          margin: 0;
+          font-weight: bold;
+        }
+      }
+    }
+  }
+}
+
+.navbar {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  top: 0;
+  width: 100vw;
+  height: 3em;
+  border-bottom: 1px solid gray;
+
+  background: linear-gradient(#003080, #003888, #004090, #0050a0);
+
+  h1.navbar-header {
+    margin-left: 1em;
+    font-weight:bold;
+    color: white;
+    text-shadow: 1px 0px 5px black;
+  }
+}

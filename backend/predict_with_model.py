@@ -12,16 +12,28 @@ def get_model(id: int):
     return model
 
 
-def predict_photo(model, photo: cv2.MatLike) -> str:
-    photo = cv2.imread()
+def predict_photo(model, photo: np.ndarray) -> dict[str, str]:
     image = cv2.resize(photo, (IMG_HEIGHT, IMG_WIDTH))
-    print(model.predict(np.array([image])))
+    prediction = model.predict(np.array([image]))[0]
+    response = {}
+    if abs(prediction[0] - prediction[1]) < 0.2:
+        response = {"verdict": "unsure", "certainty": ""}
+    elif prediction[0] > prediction[1]:
+        response = {"verdict": "fake", "certainty": str(round(prediction[0], 2)*100)}
+    else:
+        response = {"verdict": "real", "certainty": str(round(prediction[1], 2)*100)}
+    return response
 
 
-def main() -> None:
+def prediction(photo: np.ndarray) -> str:
     model = get_model(MODEL_ID)
-    predict_photo(model)
+    return predict_photo(model, photo)
 
 
-if __name__ == "__main__":
-    main()
+# def main() -> None:
+#     model = get_model(MODEL_ID)
+#     predict_photo(model, photo)
+
+
+# if __name__ == "__main__":
+#     main()
