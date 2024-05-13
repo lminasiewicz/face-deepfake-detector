@@ -1,0 +1,11 @@
+Funkcjonalność Aplikacji:
+Wrzuć zdjęcie ludzkiej twarzy na stronę i kliknij przycisk.
+Aplikacja webowa skorzysta z modelu konwolucyujnego z prawie dwoma milionami parametrów aby stwierdzić,
+czy wrzucone zdjęcie ludzkiej twarzy jest prawdziwe, czy jest deepfake'iem.
+
+
+ENG:
+Functionality of the app:
+Upload a photo of a human face and press the button.
+The web app will utilize a convolutional model with nearly two million parameters to tell,
+whether your photo is of a real person, or a deepfake.

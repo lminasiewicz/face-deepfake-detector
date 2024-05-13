@@ -1,15 +1,23 @@
 from tensorflow.keras.models import load_model
 import numpy as np
 import cv2
+from dotenv import load_dotenv
+from os import getenv
 
-MODEL_ID = 3
-IMG_HEIGHT = 300
-IMG_WIDTH = 300
+load_dotenv()
+
+MODEL_ID = 4
+IMG_HEIGHT = int(getenv("IMG_HEIGHT"))
+IMG_WIDTH = int(getenv("IMG_WIDTH"))
 
 
-def get_model(id: int):
-    model = load_model(f"models/face_deepfake_detector_{id}.keras", compile=False)
-    return model
+def get_model(id: int, version: int = 1):
+    if version == 1:
+        model = load_model(f"models/face_deepfake_detector_{id}.keras", compile=False)
+        return model
+    elif version == 2:
+        model = load_model(f"models/face_deepfake_detector_V2_{id}.keras", compile=False)
+        return model
 
 
 def predict_photo(model, photo: np.ndarray) -> dict[str, str]:

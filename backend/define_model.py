@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
-from os import listdir
-from tensorflow.keras.preprocessing.image import load_img, img_to_array
+from dotenv import load_dotenv
+from os import listdir, getenv
+from tensorflow.keras.preprocessing.image import load_img, img_to_array, smart_resize, ImageDataGenerator
 from sklearn.model_selection import train_test_split
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
@@ -11,17 +12,20 @@ from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
 from seaborn import heatmap
 
-IMG_HEIGHT = 300
-IMG_WIDTH = 300
-EPOCHS = 8
-BATCH_SIZE = 16
-VALIDATION_SPLIT = 0.25
-RANDOM_STATE = 2137
-CONV1 = 64
-CONV2 = 32
-CONV3 = 32
-DENSE1 = 64
-DENSE2 = 16
+load_dotenv()
+IMG_HEIGHT = int(getenv("IMG_HEIGHT"))
+IMG_WIDTH = int(getenv("IMG_WIDTH"))
+EPOCHS = int(getenv("EPOCHS"))
+BATCH_SIZE = int(getenv("BATCH_SIZE"))
+VALIDATION_SPLIT = float(getenv("VALIDATION_SPLIT"))
+RANDOM_STATE = int(getenv("RANDOM_STATE"))
+CONV1 = int(getenv("CONV1"))
+CONV2 = int(getenv("CONV2"))
+CONV3 = int(getenv("CONV3"))
+DENSE1 = int(getenv("DENSE1"))
+DENSE2 = int(getenv("DENSE2"))
+DENSE3 = int(getenv("DENSE3"))
+DATASET_DIR = getenv("DATASET_DIR")
 
 # Determining the ID of next model
 def get_next_id() -> int:
@@ -36,16 +40,19 @@ def get_next_id() -> int:
 
 def get_model() -> Sequential:
     model = Sequential([
-        Conv2D(CONV1, (3, 3), activation="relu", input_shape=(IMG_HEIGHT, IMG_WIDTH, 3)),
-        MaxPooling2D((3, 3)),
-        Conv2D(CONV2, (3, 3), activation="relu"),
-        MaxPooling2D((3, 3)),
-        Conv2D(CONV3, (3, 3), activation="relu"),
-        MaxPooling2D((3, 3)),
+        Conv2D(CONV1, (2, 2), activation="relu", input_shape=(IMG_HEIGHT, IMG_WIDTH, 3)),
+        MaxPooling2D((2, 2)),
+        Conv2D(CONV2, (2, 2), activation="relu"),
+        MaxPooling2D((2, 2)),
+        Conv2D(CONV3, (2, 2), activation="relu"),
+        MaxPooling2D((2, 2)),
+        Conv2D(CONV3, (2, 2), activation="relu"),
+        MaxPooling2D((2, 2)),
         Flatten(),
         Dense(DENSE1, activation="relu"),
         Dense(DENSE2, activation="relu"),
-        Dense(2, activation="softmax")
+        Dense(DENSE3, activation="relu"),
+        Dense(1, activation="softmax")
     ])
     model.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
     return model
@@ -87,43 +94,63 @@ def get_model_diagnostics(history: History) -> None:
     plt.show()
 
 
+def define_and_train_model(images: np.ndarray = np.array([]), labels: np.ndarray = np.array([]), generator: bool = False, save: bool = False, save_path: str = ""):
+    # Define Model
+    model = get_model()
+    trainer = None
+    if generator:
+        generator = ImageDataGenerator(rescale=(1.0/255.0), horizontal_flip=True, zoom_range=0.15, rotation_range=20)
+        trainer = generator.flow_from_directory('dataset2/separated/train/',
+            class_mode='binary', batch_size=BATCH_SIZE, target_size=(IMG_HEIGHT, IMG_WIDTH))
+        tester = generator.flow_from_directory('dataset2/separated/test/',
+            class_mode='binary', batch_size=BATCH_SIZE, target_size=(IMG_HEIGHT, IMG_WIDTH))
+
+    # Fit Model
+    history = History()
+    if generator:
+        model.fit_generator(trainer, steps_per_epoch=len(trainer), validation_data=tester,
+                            validation_steps=len(tester), epochs=EPOCHS, callbacks=[history])
+    else:
+        x_train, x_test, y_train, y_test = train_test_split(images, labels, random_state=RANDOM_STATE, test_size=VALIDATION_SPLIT)
+        model.fit(x_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_split=VALIDATION_SPLIT, callbacks=[history])
+        # Confusion Matrix
+        get_confusion_matrix(model, x_test, y_test)
+    model.summary()
+
+    # Accuracy & Loss Plots
+    get_model_diagnostics(history)
+
+    # Save Model
+    if save:
+        id = get_next_id()
+        if save_path == "":
+            model.save(f"models/face_deepfake_detector_{id}.keras")
+        else:
+            save_path = save_path.replace("{id}", str(id))
+            model.save(save_path)
+    
+
+
 def main() -> None:
     # Load Labels
-    labels_csv = pd.read_csv("./dataset/data.csv")
+    labels_csv = pd.read_csv(f"./{DATASET_DIR}/data.csv")
     labels = labels_csv["label"]
     total_files = labels_csv.shape[0]
 
     # Load Images
     images = np.ndarray(shape=(total_files, IMG_HEIGHT, IMG_WIDTH, 3), dtype=np.uint16)
-    files = listdir("dataset/all/")
+    files = listdir(f"{DATASET_DIR}/all/")
     for i in range(total_files):
-        images[i] = img_to_array(load_img("dataset/all/" + files[total_files - i - 1]))
+        images[i] = smart_resize(img_to_array(load_img(f"{DATASET_DIR}/all/" + files[total_files - i - 1])), (IMG_HEIGHT, IMG_WIDTH))
 
     # Preprocess labels
     for i in range(len(labels)):
         labels[i] = 0 if labels[i] == "fake" else 1
     labels = to_categorical(labels)
 
-    # Split Dataset into Training and Validation Sets
-    x_train, x_test, y_train, y_test = train_test_split(images, labels, random_state=RANDOM_STATE, test_size=VALIDATION_SPLIT)
-
-    # Define Model
-    model = get_model()
-
-    # Fit Model
-    history = History()
-    model.fit(x_train, y_train, epochs=EPOCHS, batch_size=BATCH_SIZE, validation_split=VALIDATION_SPLIT, callbacks=[history])
-    model.summary()
-
-    # Confusion Matrix
-    get_confusion_matrix(model, x_test, y_test)
-
-    # Accuracy & Loss Plots
-    get_model_diagnostics(history)
-
-    # Save Model
+    # Define and train model
     id = get_next_id()
-    model.save(f"models/face_deepfake_detector_{id}.keras")
+    define_and_train_model(images=images, labels=labels, save=True)
 
     # Log Model Information
     with open("models/model_parameters.txt", "a") as file:
