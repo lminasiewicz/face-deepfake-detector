@@ -7,6 +7,7 @@ from os import getenv
 load_dotenv()
 
 MODEL_ID = 4
+MODEL_VERSION = 2
 IMG_HEIGHT = int(getenv("IMG_HEIGHT"))
 IMG_WIDTH = int(getenv("IMG_WIDTH"))
 
@@ -24,9 +25,10 @@ def predict_photo(model, photo: np.ndarray) -> dict[str, str]:
     image = cv2.resize(photo, (IMG_HEIGHT, IMG_WIDTH))
     prediction = model.predict(np.array([image]))[0]
     response = {}
-    if abs(prediction[0] - prediction[1]) < 0.2:
+    print(prediction)
+    if prediction[0] > 0.4 and prediction[0] < 0.6:
         response = {"verdict": "unsure", "certainty": ""}
-    elif prediction[0] > prediction[1]:
+    elif prediction[0] > 0.4:
         response = {"verdict": "fake", "certainty": str(round(prediction[0], 2)*100)}
     else:
         response = {"verdict": "real", "certainty": str(round(prediction[1], 2)*100)}
@@ -34,7 +36,7 @@ def predict_photo(model, photo: np.ndarray) -> dict[str, str]:
 
 
 def prediction(photo: np.ndarray) -> str:
-    model = get_model(MODEL_ID)
+    model = get_model(MODEL_ID, version=MODEL_VERSION)
     return predict_photo(model, photo)
 
 

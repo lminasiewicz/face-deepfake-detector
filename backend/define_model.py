@@ -52,7 +52,7 @@ def get_model() -> Sequential:
         Dense(DENSE1, activation="relu"),
         Dense(DENSE2, activation="relu"),
         Dense(DENSE3, activation="relu"),
-        Dense(1, activation="softmax")
+        Dense(1, activation="sigmoid")
     ])
     model.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
     return model
